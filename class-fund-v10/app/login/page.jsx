@@ -15,15 +15,26 @@ export default function LoginPage() {
 
   const submit = async (e) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    setError(""); 
+    setLoading(true);
+    
     try {
+      // 1. Gửi request đăng nhập
       await apiFetch("/api/auth/login", { method: "POST", body: { email, password } });
-      await reloadUser();
-      router.push("/dashboard");
+      
+      // 2. Cố gắng reload user (nếu có lỗi ngầm cũng không làm kẹt nút bấm)
+      try {
+        await reloadUser();
+      } catch (err) {
+        console.warn("Reload user warning:", err);
+      }
+
+      // 3. Ép trình duyệt chuyển hướng và làm mới toàn bộ cookie/session
+      window.location.href = "/dashboard";
+      
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      setError(err.message || "Đăng nhập thất bại");
+      setLoading(false); // Chỉ tắt loading khi có lỗi xảy ra
     }
   };
 
