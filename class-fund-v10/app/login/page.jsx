@@ -11,26 +11,27 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { reloadUser } = useApp();
+  const { reloadUser } = useApp(); // Vẫn giữ nguyên useApp theo ý bạn
 
   const submit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError(""); 
     setLoading(true);
     
     try {
-      // 1. Gửi request đăng nhập
+      // 1. Gửi request đăng nhập (cookie token được set với path: "/")
       await apiFetch("/api/auth/login", { method: "POST", body: { email, password } });
       
-      // 2. Cập nhật thông tin user vào context toàn cục
+      // 2. Cập nhật ngay lập tức user context toàn cục
       await reloadUser();
       
-      // 3. Chuyển hướng cứng sang dashboard (giúp load lại toàn bộ session và cookie sạch sẽ)
+      // 3. Chuyển hướng cứng để trình duyệt nhận diện hoàn toàn HTTP-only cookie mới
       window.location.href = "/dashboard";
       
     } catch (err) {
       setError(err.message || "Đăng nhập thất bại");
-      setLoading(false); // Chỉ tắt loading khi có lỗi để người dùng bấm lại được
+      setLoading(false); // Chỉ tắt loading khi có lỗi để user bấm lại được
     }
   };
 

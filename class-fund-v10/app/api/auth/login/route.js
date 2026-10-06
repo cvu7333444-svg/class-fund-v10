@@ -1,44 +1,11 @@
-import { connectDB } from "@/lib/mongodb";
-import { User } from "@/lib/models";
-import { signToken, jsonError } from "@/lib/auth";
-import { NextResponse } from "next/server";
+// Ví dụ chuẩn trong app/api/auth/login/route.js
+res.cookies.set("token", token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/", // <-- CỰC KỲ QUAN TRỌNG: Giúp cookie có hiệu lực trên toàn bộ tên miền
+  maxAge: 60 * 60 * 24 * 7, // 7 ngày
+});
 
-export async function POST(req) {
-  try {
-    await connectDB();
-    const { email, password } = await req.json();
-    
-    if (!email || !password) {
-      return NextResponse.json({ message: "Thiếu email hoặc mật khẩu" }, { status: 400 });
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user || !(await user.comparePassword(password))) {
-      return NextResponse.json({ message: "Email hoặc mật khẩu không đúng" }, { status: 401 });
-    }
-    
-    if (!user.isActive) {
-      return NextResponse.json({ message: "Tài khoản đã bị khóa" }, { status: 403 });
-    }
-
-    const token = signToken(user);
-
-    const res = NextResponse.json({
-      success: true,
-      user: { id: user._id, fullName: user.fullName, email: user.email, role: user.role, studentId: user.studentId },
-    });
-
-    res.cookies.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 7 * 24 * 3600,
-      path: "/",
-    });
-
-    return res; // <--- CỰC KỲ QUAN TRỌNG: Phải có dòng này để trả về response và lưu cookie!
-    
-  } catch (err) {
-    return jsonError(err);
-  }
-}
+// Chống cache Vercel Edge cho api xác thực
+res.headers.set("Cache-Control", "no-store, max-age=0");
